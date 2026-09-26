@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeSim Pro - Virtual Stock Trading</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for Portfolio and Stock Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Background Animations -->
+    <div class="orbs" id="bg-orbs">
+        <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="auth-screen" class="glass-container active-screen">
+        <div class="auth-box">
+            <h1>📈 TradeSim Pro</h1>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Risk-free Virtual Stock Simulator</p>
+            <div class="disclaimer">⚠️ Virtual app, no real money involved</div>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button class="btn-primary" onclick="window.login()">Login / Sign Up</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-screen" class="app-container hidden">
+        <header>
+            <div class="logo">📈 TradeSim Pro</div>
+            <div class="header-right">
+                <!-- Language Selector -->
+                <select id="lang-select" onchange="window.changeLanguage()" class="lang-dropdown">
+                    <option value="en">English</option>
+                    <option value="hi">हिन्दी (Hindi)</option>
+                    <option value="te">తెలుగు (Telugu)</option>
+                    <option value="ta">தமிழ் (Tamil)</option>
+                    <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                </select>
+                <div class="user-info">
+                    <span><span data-i18n="welcome">Welcome</span>, <span id="display-user" style="color: var(--primary-green);">User</span></span>
+                    <button class="btn-outline" onclick="window.logout()"><i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">Logout</span></button>
+                </div>
+            </div>
+        </header>
+
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <span class="index">NIFTY 50: <span class="profit">19,500 (+0.5%)</span></span>
+                <span class="index">SENSEX: <span class="profit">65,400 (+0.4%)</span></span>
+                <span class="index">BANK NIFTY: <span class="loss">43,200 (-0.2%)</span></span>
+                <span class="index">NIFTY IT: <span class="profit">31,100 (+1.1%)</span></span>
+                <span class="index">NIFTY MIDCAP: <span class="profit">38,200 (+0.8%)</span></span>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <!-- Sidebar Navigation -->
+            <nav class="sidebar">
+                <button class="nav-btn active" id="nav-dashboard" onclick="window.switchTab('dashboard', event)"><i class="fas fa-chart-line"></i> <span data-i18n="market">Market</span></button>
+                <button class="nav-btn" id="nav-portfolio" onclick="window.switchTab('portfolio', event)"><i class="fas fa-briefcase"></i> <span data-i18n="portfolio">Portfolio</span></button>
+                <button class="nav-btn" id="nav-watchlist" onclick="window.switchTab('watchlist', event)"><i class="fas fa-star"></i> <span data-i18n="watchlist">Watchlist</span></button>
+                <button class="nav-btn" id="nav-history" onclick="window.switchTab('history', event)"><i class="fas fa-history"></i> <span data-i18n="orders">Orders</span></button>
+                <button class="nav-btn" id="nav-how-to-use" onclick="window.switchTab('how-to-use', event)"><i class="fas fa-book-open"></i> <span data-i18n="how_to_use">How to Use</span></button>
+                <button class="nav-btn" id="nav-about-app" onclick="window.switchTab('about-app', event)"><i class="fas fa-info-circle"></i> <span data-i18n="about_app">About App</span></button>
+                
+                <div class="balance-card">
+                    <small data-i18n="virtual_cash">Virtual Cash</small>
+                    <h3 id="wallet-balance">₹1,00,000.00</h3>
+                </div>
+            </nav>
+
+            <main class="content-area">
+                <!-- Market Section -->
+                <section id="dashboard" class="tab-content active-tab">
+                    <h2><span data-i18n="market">Live Market</span> <span class="live-indicator"></span></h2>
+                    <input type="text" id="search-input" placeholder="Search Stocks (e.g. RELIANCE, TCS)..." onkeyup="window.filterStocks()">
+                    <div class="grid" id="market-grid"></div>
+                </section>
+                
+                <!-- Portfolio Section -->
+                <section id="portfolio" class="tab-content hidden">
+                    <h2 data-i18n="portfolio">My Portfolio</h2>
+                    <div class="portfolio-stats">
+                        <div class="stat-box"><small>Total Invested</small><h3 id="total-invested">₹0.00</h3></div>
+                        <div class="stat-box"><small>Current Value</small><h3 id="current-value">₹0.00</h3></div>
+                        <div class="stat-box"><small>Total P&L</small><h3 id="total-pnl" class="profit">₹0.00</h3></div>
+                    </div>
+                    <div class="chart-wrapper" style="height: 250px;"><canvas id="portfolioChart"></canvas></div>
+                    <table class="data-table">
+                        <thead><tr><th>Stock</th><th>Qty</th><th>Avg Price</th><th>LTP</th><th>P&L</th><th>Action</th></tr></thead>
+                        <tbody id="portfolio-body"></tbody>
+                    </table>
+                </section>
+
+                <!-- Watchlist Section -->
+                <section id="watchlist" class="tab-content hidden">
+                    <h2><span data-i18n="watchlist">My Watchlist</span> ⭐</h2>
+                    <div class="grid" id="watchlist-grid"></div>
+                </section>
+
+                <!-- Orders Section -->
+                <section id="history" class="tab-content hidden">
+                    <h2 data-i18n="orders">Order History</h2>
+                    <table class="data-table">
+                        <thead><tr><th>Time</th><th>Type</th><th>Stock</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </section>
+
+                <!-- How to Use -->
+                <section id="how-to-use" class="tab-content hidden">
+                    <h2>📖 How to Use TradeSim Pro</h2>
+                    <div class="info-card">
+                        <div class="step-box"><h3>1. Explore the Market</h3><p>Go to the <strong>Market</strong> tab to view live simulated prices. Click on any stock name to view its detailed Growth Chart and Company Fundamentals.</p></div>
+                        <div class="step-box"><h3>2. How to Buy Stocks</h3><p>Click the <strong>BUY</strong> button on any stock card. Enter the quantity and confirm.</p></div>
+                        <div class="step-box"><h3>3. Track Your Portfolio</h3><p>Navigate to the <strong>Portfolio</strong> tab. Monitor the performance of your investments in real-time.</p></div>
+                        <div class="step-box"><h3>4. How to Sell Stocks</h3><p>Click the <strong>SELL</strong> button from your Portfolio to book profit.</p></div>
+                    </div>
+                </section>
+
+                <!-- About App -->
+                <section id="about-app" class="tab-content hidden">
+                    <h2>ℹ️ About App</h2>
+                    <div class="info-card">
+                        <h3 style="color: var(--primary-green); margin-bottom: 10px;">TradeSim Pro - Virtual Stock Simulator</h3>
+                        <p style="margin-bottom: 20px; line-height: 1.6;">TradeSim Pro is an advanced educational virtual trading platform designed for students. It simulates real-world trading mechanics, price fluctuations, and portfolio management without any financial risk.</p>
+                        <hr style="border-color: #333; margin: 20px 0;">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 15px;"><i class="fas fa-users"></i> Project Developed By</h3>
+                        <div class="team-grid">
+                            <div class="team-member"><h4>Bhoopathi Raju Reddy</h4><span>ID: 2500032394</span></div>
+                            <div class="team-member"><h4>Medha Panda</h4><span>ID: 2500031857</span></div>
+                            <div class="team-member"><h4>Modassir Alam</h4><span>ID: 2500032667</span></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Trade Modal (Buy/Sell) -->
+    <div id="trade-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Trade</h2>
+            <p>Current Price: <span id="modal-price" class="profit">₹0.00</span></p>
+            <input type="number" id="trade-qty" placeholder="Quantity" min="1" oninput="window.calculateTotal()">
+            <p style="margin: 15px 0;">Total Amount: <span id="modal-total" style="font-weight: bold; font-size: 1.2rem;">₹0.00</span></p>
+            <div class="modal-actions">
+                <button class="btn-buy" onclick="window.executeTrade('BUY')" data-i18n="buy">BUY</button>
+                <button class="btn-sell" onclick="window.executeTrade('SELL')" data-i18n="sell">SELL</button>
+                <button class="btn-outline" onclick="window.closeModal('trade-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFESSIONAL STOCK DETAIL MODAL (Groww Style) -->
+    <div id="stock-detail-modal" class="modal hidden">
+        <div class="modal-content stock-modal-content">
+            <div class="stock-modal-header">
+                <div style="text-align: left;">
+                    <h2 id="detail-title" style="color: var(--text-main); margin-bottom: 5px;">Stock Symbol</h2>
+                    <p id="detail-name" style="color: var(--text-muted); font-size: 0.9rem;">Company Name</p>
+                </div>
+                <div style="text-align: right;">
+                    <h2 id="detail-current" class="profit">₹0.00</h2>
+                    <p id="detail-change" class="profit">0.00%</p>
+                </div>
+            </div>
+
+            <!-- Groww Style Chart Container -->
+            <div class="stock-chart-container">
+                <canvas id="stockLineChart"></canvas>
+            </div>
+
+            <!-- Company Valuation & Fundamentals -->
+            <h4 style="text-align: left; margin: 20px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; color: var(--text-muted);">Fundamentals</h4>
+            <div class="fundamentals-grid">
+                <div class="fund-box"><small>Market Cap</small><strong id="fund-mcap">-</strong></div>
+                <div class="fund-box"><small>P/E Ratio</small><strong id="fund-pe">-</strong></div>
+                <div class="fund-box"><small>ROE</small><strong id="fund-roe">-</strong></div>
+                <div class="fund-box"><small>Div Yield</small><strong id="fund-yield">-</strong></div>
+                <div class="fund-box"><small>52W High</small><strong id="fund-high">-</strong></div>
+                <div class="fund-box"><small>52W Low</small><strong id="fund-low">-</strong></div>
+            </div>
+
+            <button class="btn-outline" style="width: 100%; margin-top: 20px;" onclick="window.closeModal('stock-detail-modal')">Close Window</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script> 
+</body>
+</html>
